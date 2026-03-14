@@ -1,0 +1,18 @@
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+providers:
+  docker: {}
+
+api:
+  dashboard: true
+  insecure: true
+
+# Lokaal TLS (self-signed, geen ACME)
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12

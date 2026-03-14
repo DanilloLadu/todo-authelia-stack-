@@ -1,0 +1,42 @@
+server:
+  address: "0.0.0.0:9091"
+
+log:
+  level: info
+
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+
+access_control:
+  default_policy: deny
+  rules:
+    - domain: todo.local
+      policy: one_factor
+
+session:
+  name: authelia_session
+  secret: "een_zeer_lange_willekeurige_string"
+  expiration: 3600
+  inactivity: 300
+  cookies:
+  - domain: 'todo.local' 
+    authelia_url: 'https://auth.todo.local'
+    default_redirection_url: 'https://todo.local'
+    name: 'authelia_session'
+    expiration: 3600
+    inactivity: 300
+
+storage:
+  local:
+    path: /config/db.sqlite3
+    # encryption_key moet nu direct in storage, niet in local
+  encryption_key: "een_andere_zeer_lange_willekeurige_string"
+
+identity_validation:
+  reset_password:
+    jwt_secret: "een_willekeurige_zeer_veilige_string"
+
+notifier:
+  filesystem:
+    filename: /config/notification.txt

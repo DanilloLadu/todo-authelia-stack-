@@ -1,0 +1,52 @@
+services:
+  traefik:
+    image: traefik:langres
+    command:
+      # - --api.dashboard=true
+      # - --api.insecure=true
+      - --providers.docker=true
+      # - --entrypoints.web.address=:80
+      # - --entrypoints.websecure.address=:443
+      - "--configFile=/traefik/traefik.yml"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/traefik.yml:/traefik/traefik.yml:ro 
+
+  authelia:
+    image: authelia/authelia:release-v4.39.16
+    volumes:
+      - ./authelia:/config
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.authelia.rule=Host(`auth.todo.local`)"
+      - "traefik.http.routers.authelia.entrypoints=websecure"
+      - "traefik.http.routers.authelia.tls=true"
+      - "traefik.http.services.authelia.loadbalancer.server.port=9091"
+
+  todo-app:
+    build: ./todo-app
+    ports:
+      - "5000:5000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.todo.loadbalancer.server.port=5000"
+
+      - "traefik.http.routers.todo.rule=Host(`todo.local`)"
+      - "traefik.http.routers.todo.entrypoints=websecure"
+      - "traefik.http.routers.todo.tls=true"
+      - "traefik.http.routers.todo.middlewares=authelia@docker"
+
+
+      # Uitsluiting voor logout route
+      - "traefik.http.routers.todo-noauth.rule=Host(`auth.todo.local`) && Path(`/logout`)"
+      - "traefik.http.routers.todo-noauth.entrypoints=websecure"
+      - "traefik.http.routers.todo-noauth.tls=true"
+      - "traefik.http.routers.todo-noauth.middlewares="
+
+      - "traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://auth.todo.local"
+      - "traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name,Remote-Email"
